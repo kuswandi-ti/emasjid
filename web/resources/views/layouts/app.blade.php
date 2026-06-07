@@ -20,5 +20,7 @@
     <x-confirm-modal />
 
     @stack('scripts')
+
+    <x-flash-messages />
 </body>
 </html>
