@@ -1,0 +1,73 @@
+name: emasjid_app
+description: "EMasjid - Platform manajemen masjid untuk jamaah."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_bloc: ^8.1.0
+  equatable: ^2.0.0
+
+  # HTTP & API
+  dio: ^5.4.0
+  retrofit: ^4.1.0
+  json_annotation: ^4.8.0
+
+  # Local Storage
+  shared_preferences: ^2.2.0
+  flutter_secure_storage: ^9.0.0
+
+  # Firebase & Notification
+  firebase_core: ^3.9.0
+  firebase_messaging: ^15.2.0
+  flutter_local_notifications: ^18.0.0
+
+  # UI Components
+  google_fonts: ^6.1.0
+  shimmer: ^3.0.0
+  cached_network_image: ^3.3.0
+  flutter_svg: ^2.0.0
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # QR Code
+  mobile_scanner: ^5.1.0
+
+  # Location
+  geolocator: ^11.0.0
+  geocoding: ^3.0.0
+
+  # Payment (WebView untuk Duitku payment URL)
+  webview_flutter: ^4.7.0
+
+  # Utilities
+  intl: ^0.19.0
+  url_launcher: ^6.2.0
+  image_picker: ^1.0.0
+  permission_handler: ^11.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.0
+  retrofit_generator: ^8.1.0
+  json_serializable: ^6.7.0
+
+flutter:
+  uses-material-design: true
+
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/

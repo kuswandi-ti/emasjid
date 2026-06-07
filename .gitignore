@@ -1,0 +1,44 @@
+# ===== Laravel (web/) =====
+web/vendor/
+web/node_modules/
+web/.env
+web/.env.backup
+web/.env.production
+web/storage/*.key
+web/storage/framework/cache/data/*
+web/storage/framework/sessions/*
+web/storage/framework/views/*
+web/storage/logs/*
+web/public/hot
+web/public/storage
+web/public/build/
+web/bootstrap/cache/*
+
+# ===== Flutter (emasjid_app/) =====
+emasjid_app/.dart_tool/
+emasjid_app/.packages
+emasjid_app/build/
+emasjid_app/.flutter-plugins
+emasjid_app/.flutter-plugins-dependencies
+emasjid_app/android/.gradle/
+emasjid_app/android/local.properties
+emasjid_app/android/app/google-services.json
+emasjid_app/ios/Pods/
+emasjid_app/ios/.symlinks/
+emasjid_app/ios/Flutter/Generated.xcconfig
+emasjid_app/ios/Runner/GoogleService-Info.plist
+emasjid_app/.pub-cache/
+emasjid_app/pubspec.lock
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
