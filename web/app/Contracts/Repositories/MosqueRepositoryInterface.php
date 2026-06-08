@@ -2,6 +2,7 @@
 
 namespace App\Contracts\Repositories;
 
+use App\Enums\MosqueStatus;
 use App\Models\Mosque;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -72,4 +73,24 @@ interface MosqueRepositoryInterface
      * Get mosques administered by a user.
      */
     public function getByAdmin(int $userId): Collection;
+
+    /**
+     * Count mosques by status.
+     */
+    public function countByStatus(MosqueStatus $status): int;
+
+    /**
+     * Get total congregation count across all active mosques.
+     */
+    public function getTotalCongregationCount(): int;
+
+    /**
+     * Get pending mosques with search support.
+     */
+    public function getPending(?string $search, int $perPage): LengthAwarePaginator;
+
+    /**
+     * Find mosque with eager-loaded relationships.
+     */
+    public function findWithRelations(int $id, array $relations): ?Mosque;
 }

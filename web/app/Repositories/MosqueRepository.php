@@ -130,4 +130,44 @@ class MosqueRepository implements MosqueRepositoryInterface
     {
         return Mosque::where('admin_user_id', $userId)->get();
     }
+
+    public function countByStatus(\App\Enums\MosqueStatus $status): int
+    {
+        return Mosque::where('status', $status->value)->count();
+    }
+
+    public function getTotalCongregationCount(): int
+    {
+        return DB::table('mosque_user')
+            ->join('mosques', 'mosque_user.mosque_id', '=', 'mosques.id')
+            ->where('mosques.status', \App\Enums\MosqueStatus::Active->value)
+            ->count();
+    }
+
+    public function getPending(?string $search, int $perPage): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = Mosque::where('status', \App\Enums\MosqueStatus::Pending->value)
+            ->with('admin')
+            ->withCount('members');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhereHas('admin', function ($adminQuery) use ($search) {
+                        $adminQuery->where('email', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        return $query->oldest()->paginate($perPage);
+    }
+
+    public function findWithRelations(int $id, array $relations): ?Mosque
+    {
+        return Mosque::with($relations)
+            ->withCount('members')
+            ->withSum('donations as total_donations', 'mosque_receives')
+            ->find($id);
+    }
 }
