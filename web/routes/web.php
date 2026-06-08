@@ -20,7 +20,11 @@ Route::prefix('owner')->name('owner.')->middleware(['auth', 'owner'])->group(fun
     Route::get('/dashboard', fn () => view('owner.dashboard'))->name('dashboard');
     Route::get('/mosques', fn () => view('owner.dashboard'))->name('mosques.index');
     Route::get('/mosques/pending', fn () => view('owner.dashboard'))->name('mosques.pending');
-    Route::get('/settings', fn () => view('owner.dashboard'))->name('settings.index');
+    
+    // Settings
+    Route::get('/settings', [\App\Http\Controllers\Owner\SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [\App\Http\Controllers\Owner\SettingController::class, 'update'])->name('settings.update');
+    
     Route::get('/users', fn () => view('owner.dashboard'))->name('users.index');
     Route::get('/reports', fn () => view('owner.dashboard'))->name('reports.index');
 });
