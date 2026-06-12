@@ -2,12 +2,16 @@
 
 namespace App\Providers;
 
+use App\Contracts\Repositories\FeeReportRepositoryInterface;
+use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Enums\MosqueStatus;
 use App\Events\MosqueApproved;
 use App\Events\MosqueRejected;
 use App\Listeners\SendMosqueApprovedNotification;
 use App\Listeners\SendMosqueRejectedNotification;
 use App\Models\Mosque;
+use App\Repositories\FeeReportRepository;
+use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -20,7 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+        $this->app->bind(FeeReportRepositoryInterface::class, FeeReportRepository::class);
     }
 
     /**

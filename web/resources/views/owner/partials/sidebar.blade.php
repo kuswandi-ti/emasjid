@@ -23,6 +23,16 @@
             @endif
         </a>
 
+        <a href="{{ route('owner.users.index') }}"
+           class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 {{ request()->routeIs('owner.users*') ? 'active bg-primary' : '' }}">
+            <i class="bi bi-people me-2"></i> Akun Admin Platform
+        </a>
+
+        <a href="{{ route('owner.reports.fee.index') }}"
+           class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 {{ request()->routeIs('owner.reports*') ? 'active bg-primary' : '' }}">
+            <i class="bi bi-bar-chart-line me-2"></i> Laporan Fee
+        </a>
+
         <a href="{{ route('owner.settings.index') }}"
            class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 {{ request()->routeIs('owner.settings*') ? 'active bg-primary' : '' }}">
             <i class="bi bi-gear me-2"></i> Settings

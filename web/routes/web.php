@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Owner\DashboardController;
 use App\Http\Controllers\Owner\MosqueController;
+use App\Http\Controllers\Owner\ReportController;
+use App\Http\Controllers\Owner\UserController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Root redirect ────────────────────────────────────────────────────────────
@@ -30,8 +32,12 @@ Route::prefix('owner')->name('owner.')->middleware(['auth:web', 'owner'])->group
     Route::get('/settings', [\App\Http\Controllers\Owner\SettingController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\Owner\SettingController::class, 'update'])->name('settings.update');
     
-    Route::get('/users', fn () => view('owner.dashboard'))->name('users.index');
-    Route::get('/reports', fn () => view('owner.dashboard'))->name('reports.index');
+    // User management (CRUD akun owner)
+    Route::resource('users', UserController::class)->except(['show']);
+
+    // Reports
+    Route::get('/reports/fee', [ReportController::class, 'feeIndex'])->name('reports.fee.index');
+    Route::get('/reports/fee/export', [ReportController::class, 'feeExport'])->name('reports.fee.export');
 });
 
 // ─── Admin panel ──────────────────────────────────────────────────────────────
