@@ -25,9 +25,9 @@ class PlatformSettingService
     public function getFeeSettings(): array
     {
         return [
-            'fee_percentage' => (int) $this->repository->getValue('platform_fee_percentage', 250),
+            'fee_percentage' => (int) $this->repository->getValue('platform_fee_percentage', 0),
             'fee_mechanism' => $this->repository->getValue('platform_fee_mechanism', 'added_to_donor'),
-            'fee_active' => (bool) $this->repository->getValue('platform_fee_active', true),
+            'fee_active' => (bool) $this->repository->getValue('platform_fee_active', '0'),
         ];
     }
 
@@ -72,7 +72,7 @@ class PlatformSettingService
         $feeMechanism = $settings['fee_mechanism'];
 
         // Calculate fee (basis poin: 250 = 2.5%)
-        $feeAmount = (int) round(($amount * $feePercentage) / 10000);
+        $feeAmount = (int) floor(($amount * $feePercentage) / 10000);
 
         if ($feeMechanism === 'added_to_donor') {
             // Fee ditambahkan ke donatur

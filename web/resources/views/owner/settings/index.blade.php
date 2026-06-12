@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Calculate fee
-        const feeAmount = Math.round((sampleAmount * basisPoints) / 10000);
+        const feeAmount = Math.floor((sampleAmount * basisPoints) / 10000);
 
         if (mechanism === 'added_to_donor') {
             // Fee ditambahkan ke donatur

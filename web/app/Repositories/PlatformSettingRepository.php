@@ -6,6 +6,7 @@ use App\Contracts\Repositories\PlatformSettingRepositoryInterface;
 use App\Models\PlatformSetting;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class PlatformSettingRepository implements PlatformSettingRepositoryInterface
 {
@@ -82,14 +83,16 @@ class PlatformSettingRepository implements PlatformSettingRepositoryInterface
 
     public function setMany(array $settings): bool
     {
-        foreach ($settings as $key => $value) {
-            $description = is_array($value) ? ($value['description'] ?? null) : null;
-            $settingValue = is_array($value) ? ($value['value'] ?? $value) : $value;
+        return DB::transaction(function () use ($settings) {
+            foreach ($settings as $key => $value) {
+                $description = is_array($value) ? ($value['description'] ?? null) : null;
+                $settingValue = is_array($value) ? ($value['value'] ?? $value) : $value;
 
-            $this->set($key, $settingValue, $description);
-        }
+                $this->set($key, $settingValue, $description);
+            }
 
-        return true;
+            return true;
+        });
     }
 
     public function getAllAsKeyValue(): array
