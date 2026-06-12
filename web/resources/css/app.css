@@ -1,1 +1,47 @@
+/* Bootstrap 5 */
 @import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* AdminLTE 4 */
+@import 'admin-lte/dist/css/adminlte.min.css';
+
+/* Font Awesome 7 */
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+/* DataTables Bootstrap 5 theme */
+@import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
+
+/* SweetAlert2 */
+@import 'sweetalert2/dist/sweetalert2.min.css';
+
+/* ─── EMasjid Custom Variables & Overrides ───────────────────────────────── */
+:root {
+    --em-primary:   #3d6b4f;
+    --em-primary-dark: #2e5140;
+    --em-sidebar-bg: #343a40;
+}
+
+/* Sidebar brand & active link */
+.app-sidebar {
+    background-color: var(--em-sidebar-bg) !important;
+}
+
+.nav-sidebar .nav-link.active,
+.nav-sidebar .nav-link:hover {
+    background-color: var(--em-primary) !important;
+    color: #fff !important;
+}
+
+/* Top navbar */
+.app-header {
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Stat card accent */
+.card-stat-accent {
+    border-left: 4px solid var(--em-primary);
+}
+
+/* DataTable wrapper spacing */
+.dataTables_wrapper {
+    padding: 0;
+}
