@@ -165,3 +165,15 @@ if (! function_exists('api_server_error')) {
         return api_error($message, 500, $errors);
     }
 }
+
+if (! function_exists('format_rupiah')) {
+    /**
+     * Format an integer amount as Indonesian Rupiah currency string.
+     *
+     * Example: format_rupiah(1250000) → "Rp 1.250.000"
+     */
+    function format_rupiah(int $amount): string
+    {
+        return 'Rp ' . number_format($amount, 0, ',', '.');
+    }
+}

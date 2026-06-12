@@ -47,7 +47,7 @@ class RejectMosqueDTO
                 },
             ],
             'rejected_by_user_id' => 'required|integer|exists:users,id',
-            'rejection_reason' => 'required|string|min:10',
+            'rejection_reason' => 'required|string|min:10|max:500',
             'rejected_at' => 'nullable|date',
         ], [
             'mosque_id.required' => 'Mosque ID is required.',
@@ -59,6 +59,7 @@ class RejectMosqueDTO
             'rejection_reason.required' => 'Rejection reason is required.',
             'rejection_reason.string' => 'Rejection reason must be a string.',
             'rejection_reason.min' => 'Rejection reason must be at least 10 characters.',
+            'rejection_reason.max' => 'Rejection reason must not exceed 500 characters.',
             'rejected_at.date' => 'Rejected at must be a valid date.',
         ]);
 

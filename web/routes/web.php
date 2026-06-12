@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Owner\DashboardController;
+use App\Http\Controllers\Owner\MosqueController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Root redirect ────────────────────────────────────────────────────────────
@@ -16,10 +18,11 @@ Route::post('/logout', [LoginController::class, 'destroy'])->name('logout')
     ->middleware('auth');
 
 // ─── Owner panel ──────────────────────────────────────────────────────────────
-Route::prefix('owner')->name('owner.')->middleware(['auth', 'owner'])->group(function () {
-    Route::get('/dashboard', fn () => view('owner.dashboard'))->name('dashboard');
-    Route::get('/mosques', fn () => view('owner.dashboard'))->name('mosques.index');
-    Route::get('/mosques/pending', fn () => view('owner.dashboard'))->name('mosques.pending');
+Route::prefix('owner')->name('owner.')->middleware(['auth:web', 'owner'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/mosques', [MosqueController::class, 'index'])->name('mosques.index');
+    Route::get('/mosques/pending', [MosqueController::class, 'pending'])->name('mosques.pending');
+    Route::get('/mosques/{id}', [MosqueController::class, 'show'])->name('mosques.show');
     
     // Settings
     Route::get('/settings', [\App\Http\Controllers\Owner\SettingController::class, 'index'])->name('settings.index');

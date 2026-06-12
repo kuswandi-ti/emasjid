@@ -15,8 +15,10 @@ class RejectMosqueDTOTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_creates_dto_from_valid_array_data()
+    /**
+     * Test DTO can be created from valid array data
+     */
+    public function test_creates_dto_from_valid_array_data(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Pending]);
@@ -41,8 +43,10 @@ class RejectMosqueDTOTest extends TestCase
         $this->assertEquals($rejectedAt->toDateTimeString(), $dto->rejected_at->toDateTimeString());
     }
 
-    /** @test */
-    public function it_creates_dto_with_default_rejected_at_when_not_provided()
+    /**
+     * Test DTO creates with default rejected_at when not provided
+     */
+    public function test_creates_dto_with_default_rejected_at_when_not_provided(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Pending]);
@@ -64,8 +68,10 @@ class RejectMosqueDTOTest extends TestCase
         $this->assertTrue($dto->rejected_at->between($beforeCreation, $afterCreation));
     }
 
-    /** @test */
-    public function it_throws_validation_exception_when_mosque_id_is_missing()
+    /**
+     * Test throws validation exception when mosque_id is missing
+     */
+    public function test_throws_validation_exception_when_mosque_id_is_missing(): void
     {
         // Arrange
         $user = User::factory()->create();
@@ -79,8 +85,11 @@ class RejectMosqueDTOTest extends TestCase
         RejectMosqueDTO::fromArray($data);
     }
 
-    /** @test */
-    public function it_throws_validation_exception_when_mosque_does_not_exist()
+    /**
+     * Test throws validation exception when mosque does not exist
+     * Requirements: 6.3
+     */
+    public function test_throws_validation_exception_when_mosque_does_not_exist(): void
     {
         // Arrange
         $user = User::factory()->create();
@@ -95,8 +104,11 @@ class RejectMosqueDTOTest extends TestCase
         RejectMosqueDTO::fromArray($data);
     }
 
-    /** @test */
-    public function it_throws_validation_exception_when_mosque_is_not_pending()
+    /**
+     * Test throws validation exception when mosque is not pending
+     * Requirements: 6.5
+     */
+    public function test_throws_validation_exception_when_mosque_is_not_pending(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Active]);
@@ -113,8 +125,10 @@ class RejectMosqueDTOTest extends TestCase
         RejectMosqueDTO::fromArray($data);
     }
 
-    /** @test */
-    public function it_throws_validation_exception_when_rejected_by_user_id_is_missing()
+    /**
+     * Test throws validation exception when rejected_by_user_id is missing
+     */
+    public function test_throws_validation_exception_when_rejected_by_user_id_is_missing(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Pending]);
@@ -128,8 +142,10 @@ class RejectMosqueDTOTest extends TestCase
         RejectMosqueDTO::fromArray($data);
     }
 
-    /** @test */
-    public function it_throws_validation_exception_when_user_does_not_exist()
+    /**
+     * Test throws validation exception when user does not exist
+     */
+    public function test_throws_validation_exception_when_user_does_not_exist(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Pending]);
@@ -144,8 +160,10 @@ class RejectMosqueDTOTest extends TestCase
         RejectMosqueDTO::fromArray($data);
     }
 
-    /** @test */
-    public function it_throws_validation_exception_when_rejection_reason_is_missing()
+    /**
+     * Test throws validation exception when rejection_reason is missing
+     */
+    public function test_throws_validation_exception_when_rejection_reason_is_missing(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Pending]);
@@ -160,8 +178,11 @@ class RejectMosqueDTOTest extends TestCase
         RejectMosqueDTO::fromArray($data);
     }
 
-    /** @test */
-    public function it_throws_validation_exception_when_rejection_reason_is_too_short()
+    /**
+     * Test throws validation exception when rejection_reason is too short (< 10 chars)
+     * Requirements: 6.4
+     */
+    public function test_throws_validation_exception_when_rejection_reason_is_too_short(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Pending]);
@@ -178,8 +199,11 @@ class RejectMosqueDTOTest extends TestCase
         RejectMosqueDTO::fromArray($data);
     }
 
-    /** @test */
-    public function it_accepts_rejection_reason_with_exactly_10_characters()
+    /**
+     * Test accepts rejection_reason with exactly 10 characters (minimum boundary)
+     * Requirements: 6.4
+     */
+    public function test_accepts_rejection_reason_with_exactly_10_characters(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Pending]);
@@ -198,8 +222,10 @@ class RejectMosqueDTOTest extends TestCase
         $this->assertEquals('1234567890', $dto->rejection_reason);
     }
 
-    /** @test */
-    public function it_converts_dto_to_array()
+    /**
+     * Test DTO can be converted to array
+     */
+    public function test_converts_dto_to_array(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Pending]);
@@ -229,8 +255,11 @@ class RejectMosqueDTOTest extends TestCase
         $this->assertEquals('This mosque does not meet our requirements.', $array['rejection_reason']);
     }
 
-    /** @test */
-    public function it_validates_mosque_with_suspended_status_cannot_be_rejected()
+    /**
+     * Test mosque with suspended status cannot be rejected
+     * Requirements: 6.5
+     */
+    public function test_validates_mosque_with_suspended_status_cannot_be_rejected(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Suspended]);
@@ -246,8 +275,11 @@ class RejectMosqueDTOTest extends TestCase
         RejectMosqueDTO::fromArray($data);
     }
 
-    /** @test */
-    public function it_validates_mosque_with_rejected_status_cannot_be_rejected_again()
+    /**
+     * Test mosque with rejected status cannot be rejected again
+     * Requirements: 6.5
+     */
+    public function test_validates_mosque_with_rejected_status_cannot_be_rejected_again(): void
     {
         // Arrange
         $mosque = Mosque::factory()->create(['status' => MosqueStatus::Rejected]);
