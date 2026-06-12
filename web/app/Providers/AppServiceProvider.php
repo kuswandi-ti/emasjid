@@ -3,7 +3,12 @@
 namespace App\Providers;
 
 use App\Enums\MosqueStatus;
+use App\Events\MosqueApproved;
+use App\Events\MosqueRejected;
+use App\Listeners\SendMosqueApprovedNotification;
+use App\Listeners\SendMosqueRejectedNotification;
 use App\Models\Mosque;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +28,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Event listeners for mosque approval/rejection notifications
+        Event::listen(MosqueApproved::class, SendMosqueApprovedNotification::class);
+        Event::listen(MosqueRejected::class, SendMosqueRejectedNotification::class);
+
+
         // Super-admin bypasses all permission checks
         Gate::before(function ($user, $ability) {
             return $user->hasRole('super-admin') ? true : null;

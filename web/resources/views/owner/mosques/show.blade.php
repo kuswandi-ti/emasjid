@@ -4,6 +4,21 @@
 
 @section('content')
 
+{{-- Task 10.1: Flash Messages --}}
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 {{-- Page Header --}}
 <div class="row mb-4">
     <div class="col">
@@ -13,11 +28,36 @@
             </a>
             <div>
                 <h2 class="mb-0">{{ $mosque->name }}</h2>
-                <p class="text-muted mb-0">Mosque detail information</p>
+                <p class="text-muted mb-0">Registered on {{ $mosque->created_at->format('d M Y H:i') }}</p>
             </div>
         </div>
     </div>
 </div>
+
+{{-- Tasks 10.2–10.5: Pending Verification card (only shown when status is PENDING) --}}
+@if($mosque->status === \App\Enums\MosqueStatus::Pending)
+    <div class="card mb-4 border-warning shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title text-warning">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Pending Verification
+                <span class="badge bg-warning text-dark ms-2">Pending</span>
+            </h5>
+            <p class="card-text text-muted">
+                This mosque is awaiting your approval. Please review the details below before taking action.
+            </p>
+            {{-- Task 10.3: Approve button | Task 10.4: Reject button --}}
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success" onclick="approveMosque({{ $mosque->id }})">
+                    <i class="bi bi-check-circle me-1"></i>Approve
+                </button>
+                <button type="button" class="btn btn-danger" onclick="rejectMosque({{ $mosque->id }})">
+                    <i class="bi bi-x-circle me-1"></i>Reject
+                </button>
+            </div>
+        </div>
+    </div>
+@endif
+{{-- /Tasks 10.2–10.5 --}}
 
 {{-- 14.2 Basic Information --}}
 <div class="row mb-4">
@@ -79,6 +119,11 @@
                     <div class="col-12">
                         <span class="text-muted small d-block mb-1">Address</span>
                         <span>{{ $mosque->address ?? '-' }}</span>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <span class="text-muted small d-block mb-1">Postal Code</span>
+                        <span>{{ $mosque->postal_code ?? '-' }}</span>
                     </div>
 
                     @if($mosque->description)
@@ -228,23 +273,23 @@
             </div>
             <div class="card-body">
                 @if($statusValue === 'rejected')
-                    <div class="d-flex align-items-start gap-3 p-3 bg-danger bg-opacity-10 rounded">
-                        <i class="bi bi-x-circle-fill text-danger fs-4 flex-shrink-0 mt-1"></i>
+                    <div class="alert alert-danger d-flex align-items-start gap-3 mb-0" role="alert">
+                        <i class="bi bi-x-circle-fill fs-4 flex-shrink-0 mt-1"></i>
                         <div>
-                            <span class="fw-semibold text-danger d-block mb-1">Rejection Reason</span>
+                            <span class="fw-semibold d-block mb-1">Rejection Reason</span>
                             <p class="mb-0">{{ $mosque->rejection_reason ?? '-' }}</p>
                         </div>
                     </div>
                 @endif
 
                 @if($statusValue === 'active')
-                    <div class="d-flex align-items-start gap-3 p-3 bg-success bg-opacity-10 rounded">
-                        <i class="bi bi-check-circle-fill text-success fs-4 flex-shrink-0 mt-1"></i>
+                    <div class="alert alert-success d-flex align-items-start gap-3 mb-0" role="alert">
+                        <i class="bi bi-check-circle-fill fs-4 flex-shrink-0 mt-1"></i>
                         <div>
-                            <span class="fw-semibold text-success d-block mb-1">Approved At</span>
+                            <span class="fw-semibold d-block mb-1">Approved At</span>
                             <p class="mb-0">
                                 @if($mosque->approved_at)
-                                    {{ \Carbon\Carbon::parse($mosque->approved_at)->translatedFormat('d F Y') }}
+                                    {{ \Carbon\Carbon::parse($mosque->approved_at)->format('d M Y H:i') }}
                                 @else
                                     -
                                 @endif
@@ -259,3 +304,82 @@
 @endif
 
 @endsection
+
+@push('scripts')
+{{-- Task 11.1: SweetAlert2 CDN --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    {{-- Task 11.2: approveMosque function --}}
+    function approveMosque(mosqueId) {
+        Swal.fire({
+            title: 'Approve This Mosque?',
+            text: 'The mosque will be activated and the admin will receive a notification email.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Approve',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/owner/mosques/${mosqueId}/approve`;
+
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+
+                form.appendChild(csrfToken);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    {{-- Task 11.3: rejectMosque function --}}
+    function rejectMosque(mosqueId) {
+        Swal.fire({
+            title: 'Reject This Mosque?',
+            html: '<textarea id="rejection-reason" class="swal2-textarea" placeholder="Enter rejection reason (min 10 characters)" style="width: 100%; height: 100px;"></textarea>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Reject',
+            cancelButtonText: 'Cancel',
+            preConfirm: () => {
+                const reason = document.getElementById('rejection-reason').value;
+                if (!reason || reason.length < 10) {
+                    Swal.showValidationMessage('Rejection reason must be at least 10 characters');
+                    return false;
+                }
+                return reason;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/owner/mosques/${mosqueId}/reject`;
+
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+
+                const reasonInput = document.createElement('input');
+                reasonInput.type = 'hidden';
+                reasonInput.name = 'rejection_reason';
+                reasonInput.value = result.value;
+
+                form.appendChild(csrfToken);
+                form.appendChild(reasonInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+</script>
+@endpush

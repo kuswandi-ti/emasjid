@@ -23,7 +23,9 @@ Route::prefix('owner')->name('owner.')->middleware(['auth:web', 'owner'])->group
     Route::get('/mosques', [MosqueController::class, 'index'])->name('mosques.index');
     Route::get('/mosques/pending', [MosqueController::class, 'pending'])->name('mosques.pending');
     Route::get('/mosques/{id}', [MosqueController::class, 'show'])->name('mosques.show');
-    
+    Route::post('/mosques/{id}/approve', [MosqueController::class, 'approve'])->name('mosques.approve');
+    Route::post('/mosques/{id}/reject', [MosqueController::class, 'reject'])->name('mosques.reject');
+
     // Settings
     Route::get('/settings', [\App\Http\Controllers\Owner\SettingController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\Owner\SettingController::class, 'update'])->name('settings.update');

@@ -4,9 +4,15 @@ namespace App\Services;
 
 use App\Contracts\Repositories\MosqueRepositoryInterface;
 use App\Enums\MosqueStatus;
+use App\Events\MosqueApproved;
+use App\Events\MosqueRejected;
 use App\Models\Mosque;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class MosqueService
 {
@@ -69,5 +75,128 @@ class MosqueService
         }
 
         return $mosque->created_at->diffInDays(now());
+    }
+
+    /**
+     * Approve a pending mosque: activate it, assign an invitation code, and dispatch MosqueApproved event.
+     * All database changes are wrapped in a transaction to ensure consistency.
+     *
+     * @param  int  $mosqueId  The ID of the mosque to approve
+     * @param  int  $userId    The ID of the owner performing the approval
+     * @return bool True on success
+     *
+     * @throws \Exception If mosque is not found, not in pending status, or update fails
+     */
+    public function approve(int $mosqueId, int $userId): bool
+    {
+        DB::beginTransaction();
+
+        try {
+            $mosque = $this->mosqueRepository->find($mosqueId);
+
+            if (! $mosque || $mosque->status !== MosqueStatus::Pending) {
+                throw new \Exception('Invalid mosque or status is not pending');
+            }
+
+            $invitationCode = $this->generateUniqueInvitationCode();
+
+            $updated = $this->mosqueRepository->update($mosqueId, [
+                'status'          => MosqueStatus::Active,
+                'invitation_code' => $invitationCode,
+                'approved_at'     => now(),
+                'approved_by'     => $userId,
+            ]);
+
+            if (! $updated) {
+                throw new \Exception('Failed to update mosque');
+            }
+
+            $mosque->refresh();
+
+            event(new MosqueApproved($mosque, $userId, now()));
+
+            DB::commit();
+
+            Log::info('Mosque approved', [
+                'mosque_id'   => $mosqueId,
+                'approved_by' => $userId,
+                'approved_at' => $mosque->approved_at,
+            ]);
+
+            Cache::forget('owner.dashboard.statistics');
+
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Reject a pending mosque: mark it as rejected, save the reason, and dispatch MosqueRejected event.
+     * All database changes are wrapped in a transaction to ensure consistency.
+     *
+     * @param  int     $mosqueId  The ID of the mosque to reject
+     * @param  string  $reason    The reason for rejection (min 10 characters)
+     * @param  int     $userId    The ID of the owner performing the rejection
+     * @return bool True on success
+     *
+     * @throws \Exception If mosque is not found, not in pending status, or update fails
+     */
+    public function reject(int $mosqueId, string $reason, int $userId): bool
+    {
+        DB::beginTransaction();
+
+        try {
+            $mosque = $this->mosqueRepository->find($mosqueId);
+
+            if (! $mosque || $mosque->status !== MosqueStatus::Pending) {
+                throw new \Exception('Invalid mosque or status is not pending');
+            }
+
+            $updated = $this->mosqueRepository->update($mosqueId, [
+                'status'           => MosqueStatus::Rejected,
+                'rejection_reason' => $reason,
+                'rejected_at'      => now(),
+                'rejected_by'      => $userId,
+            ]);
+
+            if (! $updated) {
+                throw new \Exception('Failed to update mosque');
+            }
+
+            $mosque->refresh();
+
+            event(new MosqueRejected($mosque, $userId, $reason, now()));
+
+            DB::commit();
+
+            Log::info('Mosque rejected', [
+                'mosque_id'   => $mosqueId,
+                'rejected_by' => $userId,
+                'rejected_at' => $mosque->rejected_at,
+                'reason'      => $reason,
+            ]);
+
+            Cache::forget('owner.dashboard.statistics');
+
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Generate a unique 6-character uppercase alphanumeric invitation code.
+     * Uses a do-while loop to guarantee the code does not already exist in the mosques table.
+     */
+    private function generateUniqueInvitationCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(6));
+        } while ($this->mosqueRepository->existsByInvitationCode($code));
+
+        return $code;
     }
 }

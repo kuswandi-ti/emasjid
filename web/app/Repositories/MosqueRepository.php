@@ -170,4 +170,9 @@ class MosqueRepository implements MosqueRepositoryInterface
             ->withSum('donations as total_donations', 'mosque_receives')
             ->find($id);
     }
+
+    public function existsByInvitationCode(string $code): bool
+    {
+        return Mosque::where('invitation_code', $code)->exists();
+    }
 }

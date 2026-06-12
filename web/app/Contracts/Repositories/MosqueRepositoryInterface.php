@@ -93,4 +93,9 @@ interface MosqueRepositoryInterface
      * Find mosque with eager-loaded relationships.
      */
     public function findWithRelations(int $id, array $relations): ?Mosque;
+
+    /**
+     * Check if an invitation code already exists in the mosques table.
+     */
+    public function existsByInvitationCode(string $code): bool;
 }

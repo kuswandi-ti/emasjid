@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Owner\ApproveMosqueRequest;
+use App\Http\Requests\Owner\RejectMosqueRequest;
 use App\Services\MosqueService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -53,5 +56,50 @@ class MosqueController extends Controller
         $mosque = $this->mosqueService->getMosqueDetail($id);
 
         return view('owner.mosques.show', compact('mosque'));
+    }
+
+    /**
+     * Approve a pending mosque registration.
+     *
+     * Requirements: 1.2, 1.10, 1.11, 7.3, 7.4, 7.5
+     */
+    public function approve(ApproveMosqueRequest $request, int $id): RedirectResponse
+    {
+        $userId = auth()->id();
+
+        try {
+            $this->mosqueService->approve($id, $userId);
+
+            return redirect()
+                ->route('owner.mosques.show', $id)
+                ->with('success', 'Masjid berhasil disetujui dan sekarang aktif di platform.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal menyetujui masjid: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject a pending mosque registration.
+     *
+     * Requirements: 2.3, 2.10, 2.11, 7.8, 7.9, 7.10
+     */
+    public function reject(RejectMosqueRequest $request, int $id): RedirectResponse
+    {
+        $rejectionReason = $request->validated()['rejection_reason'];
+        $userId = auth()->id();
+
+        try {
+            $this->mosqueService->reject($id, $rejectionReason, $userId);
+
+            return redirect()
+                ->route('owner.mosques.pending')
+                ->with('success', 'Masjid berhasil ditolak dan admin masjid telah diberitahu.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal menolak masjid: ' . $e->getMessage());
+        }
     }
 }

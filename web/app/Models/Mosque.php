@@ -38,6 +38,9 @@ class Mosque extends Model
         'admin_user_id',
         'rejection_reason',
         'approved_at',
+        'approved_by',
+        'rejected_at',
+        'rejected_by',
     ];
 
     protected function casts(): array
@@ -47,6 +50,7 @@ class Mosque extends Model
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
         ];
     }
 
@@ -58,6 +62,22 @@ class Mosque extends Model
     public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_user_id');
+    }
+
+    /**
+     * The user who approved this mosque.
+     */
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * The user who rejected this mosque.
+     */
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 
     /**

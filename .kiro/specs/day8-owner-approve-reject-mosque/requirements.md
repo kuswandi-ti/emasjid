@@ -2,175 +2,143 @@
 
 ## Introduction
 
-This document specifies the requirements for the Owner Mosque Approval/Rejection feature in the eMasjid platform. This feature enables platform owners (super-admins) to approve or reject mosque registration requests, send notification emails to mosque admins, and display detailed mosque information for verification purposes. This is a critical workflow that determines whether a newly registered mosque becomes active on the platform.
+Dokumen ini menjelaskan requirement untuk fitur **Owner: Approve/Reject & Mosque Detail** pada platform eMasjid. Fitur ini memungkinkan platform owner (super-admin) untuk menyetujui atau menolak pendaftaran masjid baru, menampilkan detail lengkap masjid untuk keperluan verifikasi, dan mengirimkan notifikasi email otomatis ke admin masjid setelah keputusan diambil. Ini adalah alur kerja kritikal yang menentukan apakah masjid yang baru mendaftar dapat aktif di platform.
 
 ## Glossary
 
-- **Owner**: A user with the super-admin role who manages the entire eMasjid platform
-- **Mosque_Admin**: The primary administrator user of a registered mosque
-- **Approve**: The action of accepting a mosque registration and changing its status from 'pending' to 'active'
-- **Reject**: The action of declining a mosque registration and changing its status from 'pending' to 'rejected'
-- **Invitation_Code**: A unique 6-character alphanumeric code generated when a mosque is approved, used for jamaah to join the mosque
-- **Mosque_Service**: The backend service that handles mosque approval/rejection operations
-- **Event**: A Laravel event class that is dispatched when a significant action occurs (e.g., mosque approved)
-- **Listener**: A Laravel listener class that responds to events (e.g., sending email notifications)
-- **SweetAlert**: A JavaScript library for displaying beautiful modal confirmation dialogs
-- **Flash_Message**: A temporary session message displayed to the user after an action completes
+- **Owner**: Pengguna dengan role `super-admin` yang mengelola seluruh platform eMasjid
+- **Mosque_Admin**: Pengguna yang terdaftar sebagai admin utama sebuah masjid (kolom `admin_user_id` di tabel `mosques`)
+- **Mosque_Controller**: Controller Laravel di namespace `App\Http\Controllers\Owner` yang menangani aksi approve dan reject
+- **Mosque_Service**: Service class yang mengandung business logic approve dan reject masjid
+- **ApproveMosqueRequest**: Form Request Laravel untuk memvalidasi permintaan approve masjid
+- **RejectMosqueRequest**: Form Request Laravel untuk memvalidasi permintaan reject masjid
+- **MosqueApproved**: Event Laravel yang di-dispatch setelah masjid berhasil di-approve
+- **MosqueRejected**: Event Laravel yang di-dispatch setelah masjid berhasil di-reject
+- **Notification_Listener**: Listener Laravel yang mengirimkan email notifikasi ke Mosque_Admin sebagai respons terhadap event
+- **Invitation_Code**: Kode unik alphanumeric 20-karakter yang di-generate saat masjid di-approve, digunakan jamaah untuk bergabung
+- **SweetAlert2**: Library JavaScript untuk menampilkan modal konfirmasi interaktif
+- **Flash_Message**: Pesan sesi sementara yang ditampilkan ke pengguna setelah suatu aksi selesai dilakukan
+
+---
 
 ## Requirements
 
-### Requirement 1: Mosque Approval Functionality
+### Requirement 1: Tampilan Detail Masjid untuk Owner
 
-**User Story:** As a platform owner, I want to approve pending mosque registrations, so that verified mosques can become active on the platform.
-
-#### Acceptance Criteria
-
-1. WHEN the owner clicks the approve button, THE Platform SHALL display a SweetAlert confirmation modal with mosque name
-2. WHEN the owner confirms approval, THE Mosque_Controller SHALL invoke the Mosque_Service approve method
-3. THE Mosque_Service SHALL validate that the mosque exists and has status 'pending'
-4. THE Mosque_Service SHALL change the mosque status from 'pending' to 'active'
-5. THE Mosque_Service SHALL generate a unique 6-character alphanumeric invitation_code for the mosque
-6. THE Mosque_Service SHALL ensure the generated invitation_code is unique across all mosques
-7. THE Mosque_Service SHALL record the approval timestamp in the approved_at column
-8. THE Mosque_Service SHALL record the approving user's ID in the approved_by column
-9. WHEN the approval is successful, THE Mosque_Controller SHALL dispatch the MosqueApproved event
-10. WHEN the approval is successful, THE Platform SHALL redirect the owner to the mosque detail page with a success flash message
-11. WHEN the mosque is already approved or does not have pending status, THE Platform SHALL return an error message
-
-### Requirement 2: Mosque Rejection Functionality
-
-**User Story:** As a platform owner, I want to reject mosque registrations with a reason, so that admins understand why their mosque was not approved.
+**User Story:** Sebagai platform owner, saya ingin melihat informasi masjid secara lengkap di halaman detail, sehingga saya dapat membuat keputusan approve/reject yang tepat berdasarkan data yang komprehensif.
 
 #### Acceptance Criteria
 
-1. WHEN the owner clicks the reject button, THE Platform SHALL display a SweetAlert modal with a textarea for rejection reason
-2. THE Platform SHALL validate that the rejection reason is not empty and has a minimum length of 10 characters
-3. WHEN the owner confirms rejection, THE Mosque_Controller SHALL invoke the Mosque_Service reject method
-4. THE Mosque_Service SHALL validate that the mosque exists and has status 'pending'
-5. THE Mosque_Service SHALL change the mosque status from 'pending' to 'rejected'
-6. THE Mosque_Service SHALL save the rejection reason in the rejection_reason column
-7. THE Mosque_Service SHALL record the rejection timestamp in the rejected_at column
-8. THE Mosque_Service SHALL record the rejecting user's ID in the rejected_by column
-9. WHEN the rejection is successful, THE Mosque_Controller SHALL dispatch the MosqueRejected event
-10. WHEN the rejection is successful, THE Platform SHALL redirect the owner to the pending mosque list page with a success flash message
-11. WHEN the mosque is already rejected or does not have pending status, THE Platform SHALL return an error message
+1. WHEN owner membuka halaman detail masjid, THE Platform SHALL menampilkan semua field profil masjid: nama, deskripsi, alamat, kota, provinsi, kode pos, telepon, dan email
+2. WHEN owner membuka halaman detail masjid, THE Platform SHALL menampilkan foto masjid jika tersedia, atau placeholder image jika foto tidak tersedia
+3. WHEN owner membuka halaman detail masjid, THE Platform SHALL menampilkan informasi admin masjid: nama, email, dan nomor telepon
+4. WHEN owner membuka halaman detail masjid, THE Platform SHALL menampilkan informasi rekening bank: nama bank, nama pemilik rekening, dan nomor rekening
+5. WHEN latitude dan longitude masjid tersedia, THE Platform SHALL menampilkan peta lokasi masjid menggunakan embedded Google Maps iframe
+6. WHEN owner membuka halaman detail masjid, THE Platform SHALL menampilkan statistik: total jumlah jamaah terdaftar dan total donasi yang diterima dalam Rupiah
+7. WHEN owner membuka halaman detail masjid, THE Platform SHALL menampilkan tanggal registrasi masjid dalam format `d M Y H:i`
+8. THE Platform SHALL menampilkan status masjid saat ini dengan badge warna: `active` = hijau, `pending` = kuning, `suspended` = merah, `rejected` = abu-abu
+9. WHEN status masjid adalah `pending`, THE Platform SHALL menampilkan tombol Approve dan tombol Reject
+10. WHEN status masjid bukan `pending`, THE Platform SHALL menyembunyikan tombol Approve dan tombol Reject
 
-### Requirement 3: Form Request Validation
+---
 
-**User Story:** As a backend developer, I want to use Form Requests for validation, so that approval and rejection requests are validated consistently.
+### Requirement 2: Fungsionalitas Approve Masjid
 
-#### Acceptance Criteria
-
-1. THE Platform SHALL provide an ApproveMosqueRequest class that validates the mosque_id parameter
-2. THE ApproveMosqueRequest SHALL validate that mosque_id is required and exists in the mosques table
-3. THE ApproveMosqueRequest SHALL validate that the mosque has status 'pending'
-4. THE Platform SHALL provide a RejectMosqueRequest class that validates the mosque_id and rejection_reason parameters
-5. THE RejectMosqueRequest SHALL validate that mosque_id is required and exists in the mosques table
-6. THE RejectMosqueRequest SHALL validate that the mosque has status 'pending'
-7. THE RejectMosqueRequest SHALL validate that rejection_reason is required, is a string, and has a minimum length of 10 characters
-8. WHEN validation fails, THE Platform SHALL return a 422 Unprocessable Entity response with validation error messages
-
-### Requirement 4: Event and Notification System
-
-**User Story:** As a mosque admin, I want to receive an email notification when my mosque is approved or rejected, so that I know the status of my registration.
+**User Story:** Sebagai platform owner, saya ingin menyetujui pendaftaran masjid yang telah diverifikasi, sehingga masjid tersebut dapat mulai aktif menggunakan platform eMasjid.
 
 #### Acceptance Criteria
 
-1. THE Platform SHALL provide a MosqueApproved event class with properties: mosque, approvedBy, approvedAt
-2. THE Platform SHALL provide a MosqueRejected event class with properties: mosque, rejectedBy, rejectedAt, rejectionReason
-3. THE Platform SHALL provide a SendMosqueApprovedNotification listener that responds to the MosqueApproved event
-4. THE Platform SHALL provide a SendMosqueRejectedNotification listener that responds to the MosqueRejected event
-5. WHEN the MosqueApproved event is dispatched, THE SendMosqueApprovedNotification listener SHALL send an email to the mosque admin
-6. THE approval email SHALL contain: mosque name, approval date, invitation code, and a link to the admin login page
-7. WHEN the MosqueRejected event is dispatched, THE SendMosqueRejectedNotification listener SHALL send an email to the mosque admin
-8. THE rejection email SHALL contain: mosque name, rejection date, rejection reason, and a link to contact platform support
-9. THE Platform SHALL queue email notifications using Laravel's queue system to prevent blocking the approval/rejection response
-10. THE Platform SHALL log email sending failures for debugging purposes
+1. WHEN owner mengklik tombol Approve, THE Platform SHALL menampilkan modal konfirmasi SweetAlert2 bertema hijau dengan nama masjid dan dua tombol: Konfirmasi dan Batal
+2. WHEN owner mengklik tombol Batal pada modal, THE Platform SHALL menutup modal tanpa melakukan aksi apapun
+3. WHEN owner mengklik tombol Konfirmasi pada modal approve, THE Mosque_Controller SHALL menerima permintaan POST ke route `/owner/mosques/{id}/approve`
+4. THE ApproveMosqueRequest SHALL memvalidasi bahwa `mosque_id` wajib ada dan merujuk ke masjid yang ada di tabel `mosques`
+5. THE ApproveMosqueRequest SHALL memvalidasi bahwa masjid yang dirujuk memiliki status `pending`
+6. THE Mosque_Service SHALL mengubah status masjid dari `pending` menjadi `active`
+7. THE Mosque_Service SHALL men-generate `invitation_code` unik 20-karakter alphanumeric untuk masjid tersebut
+8. THE Mosque_Service SHALL memastikan `invitation_code` yang di-generate tidak duplikat dengan kode yang sudah ada di tabel `mosques`
+9. THE Mosque_Service SHALL mencatat timestamp persetujuan di kolom `approved_at`
+10. WHEN proses approve berhasil, THE Mosque_Controller SHALL men-dispatch event `MosqueApproved`
+11. WHEN proses approve berhasil, THE Platform SHALL mengarahkan owner ke halaman detail masjid dengan flash message sukses
+12. IF masjid tidak ditemukan atau status bukan `pending`, THEN THE Platform SHALL mengembalikan flash message error tanpa mengubah data masjid
 
-### Requirement 5: Mosque Detail View Enhancement
+---
 
-**User Story:** As a platform owner, I want to see comprehensive mosque details on the detail page, so that I can make informed approval decisions.
+### Requirement 3: Fungsionalitas Reject Masjid
 
-#### Acceptance Criteria
-
-1. WHEN the owner views a mosque detail page, THE Platform SHALL display all mosque profile fields including: name, description, address, city, province, postal_code, phone, email
-2. THE Platform SHALL display the mosque photo if available
-3. THE Platform SHALL display banking information: bank_name, bank_account_number, bank_account_holder
-4. THE Platform SHALL display the mosque location on an embedded Google Maps iframe if latitude and longitude are available
-5. THE Platform SHALL display the admin user details: name, email, phone_number
-6. THE Platform SHALL display congregation statistics: total members count
-7. THE Platform SHALL display financial statistics: total donation amount received
-8. THE Platform SHALL display the mosque registration date formatted as 'd M Y H:i'
-9. WHEN the mosque status is 'pending', THE Platform SHALL display approve and reject action buttons
-10. WHEN the mosque status is not 'pending', THE Platform SHALL hide approve and reject action buttons
-11. THE Platform SHALL display the current mosque status with an appropriate status badge (active=success, pending=warning, suspended=danger, rejected=secondary)
-
-### Requirement 6: User Interface and User Experience
-
-**User Story:** As a platform owner, I want intuitive modal confirmations for approve/reject actions, so that I can avoid accidental actions.
+**User Story:** Sebagai platform owner, saya ingin menolak pendaftaran masjid dengan menyertakan alasan penolakan, sehingga admin masjid memahami alasan mengapa pendaftarannya ditolak.
 
 #### Acceptance Criteria
 
-1. THE Platform SHALL use SweetAlert2 library for confirmation modals
-2. WHEN the owner clicks approve, THE Platform SHALL display a confirmation modal with title "Approve This Mosque?", mosque name, and confirm/cancel buttons
-3. THE approve confirmation modal SHALL have a success/green theme
-4. WHEN the owner clicks reject, THE Platform SHALL display a modal with title "Reject This Mosque?", a textarea for rejection reason, and confirm/cancel buttons
-5. THE reject confirmation modal SHALL have a danger/red theme
-6. THE reject modal SHALL validate that rejection reason is at least 10 characters before allowing submission
-7. WHEN the owner cancels the modal, THE Platform SHALL not perform any action and remain on the current page
-8. WHEN an approval or rejection completes successfully, THE Platform SHALL display a flash message at the top of the page
-9. THE success flash message SHALL have a success/green theme and contain the action result (e.g., "Mosque approved successfully")
-10. THE error flash message SHALL have a danger/red theme and contain the error message
+1. WHEN owner mengklik tombol Reject, THE Platform SHALL menampilkan modal SweetAlert2 bertema merah dengan judul "Tolak Masjid Ini?" dan textarea untuk input alasan penolakan
+2. THE Platform SHALL memvalidasi bahwa alasan penolakan tidak boleh kosong dan memiliki panjang minimal 10 karakter sebelum submit diizinkan
+3. WHEN owner mengklik tombol Batal pada modal reject, THE Platform SHALL menutup modal tanpa melakukan aksi apapun
+4. WHEN owner mengklik tombol Konfirmasi pada modal reject, THE Mosque_Controller SHALL menerima permintaan POST ke route `/owner/mosques/{id}/reject`
+5. THE RejectMosqueRequest SHALL memvalidasi bahwa `mosque_id` wajib ada dan merujuk ke masjid yang ada di tabel `mosques`
+6. THE RejectMosqueRequest SHALL memvalidasi bahwa masjid yang dirujuk memiliki status `pending`
+7. THE RejectMosqueRequest SHALL memvalidasi bahwa `rejection_reason` wajib diisi, bertipe string, dan memiliki panjang minimal 10 karakter
+8. THE Mosque_Service SHALL mengubah status masjid dari `pending` menjadi `rejected`
+9. THE Mosque_Service SHALL menyimpan alasan penolakan di kolom `rejection_reason`
+10. WHEN proses reject berhasil, THE Mosque_Controller SHALL men-dispatch event `MosqueRejected`
+11. WHEN proses reject berhasil, THE Platform SHALL mengarahkan owner ke halaman daftar masjid pending dengan flash message sukses
+12. IF masjid tidak ditemukan atau status bukan `pending`, THEN THE Platform SHALL mengembalikan flash message error tanpa mengubah data masjid
 
-### Requirement 7: Backend Controller Implementation
+---
 
-**User Story:** As a backend developer, I want to implement approve and reject controller methods, so that the owner can trigger these actions via HTTP requests.
+### Requirement 4: Sistem Event dan Notifikasi Email
 
-#### Acceptance Criteria
-
-1. THE Mosque_Controller SHALL provide a approve method that accepts a mosque_id parameter
-2. THE approve method SHALL use the ApproveMosqueRequest for validation
-3. THE approve method SHALL call the Mosque_Service approve method with mosque_id and authenticated user ID
-4. THE approve method SHALL return a redirect response to the mosque detail page with a success flash message on success
-5. THE approve method SHALL return a redirect response with an error flash message on failure
-6. THE Mosque_Controller SHALL provide a reject method that accepts mosque_id and rejection_reason parameters
-7. THE reject method SHALL use the RejectMosqueRequest for validation
-8. THE reject method SHALL call the Mosque_Service reject method with mosque_id, rejection_reason, and authenticated user ID
-9. THE reject method SHALL return a redirect response to the pending mosque list page with a success flash message on success
-10. THE reject method SHALL return a redirect response with an error flash message on failure
-
-### Requirement 8: Routing Configuration
-
-**User Story:** As a backend developer, I want to register approve and reject routes, so that the frontend can invoke these actions.
+**User Story:** Sebagai mosque admin, saya ingin menerima email notifikasi ketika pendaftaran masjid saya disetujui atau ditolak, sehingga saya mengetahui status pendaftaran tanpa harus mengecek panel secara manual.
 
 #### Acceptance Criteria
 
-1. THE Platform SHALL register a POST route '/owner/mosques/{id}/approve' to Mosque_Controller@approve with name 'owner.mosques.approve'
-2. THE Platform SHALL register a POST route '/owner/mosques/{id}/reject' to Mosque_Controller@reject with name 'owner.mosques.reject'
-3. THE routes SHALL be protected by 'auth:web' and 'owner' middleware
-4. THE routes SHALL be part of the 'owner' route group with prefix '/owner'
+1. THE Platform SHALL menyediakan class event `MosqueApproved` dengan properti: objek `mosque`, objek `approvedBy`, dan timestamp `approvedAt`
+2. THE Platform SHALL menyediakan class event `MosqueRejected` dengan properti: objek `mosque`, objek `rejectedBy`, timestamp `rejectedAt`, dan string `rejectionReason`
+3. THE Platform SHALL menyediakan `Notification_Listener` yang terdaftar untuk merespons event `MosqueApproved` dan mengirimkan email ke Mosque_Admin
+4. THE Platform SHALL menyediakan `Notification_Listener` yang terdaftar untuk merespons event `MosqueRejected` dan mengirimkan email ke Mosque_Admin
+5. WHEN event `MosqueApproved` di-dispatch, THE Notification_Listener SHALL mengirimkan email yang berisi: nama masjid, tanggal persetujuan, `invitation_code`, dan link ke halaman login admin
+6. WHEN event `MosqueRejected` di-dispatch, THE Notification_Listener SHALL mengirimkan email yang berisi: nama masjid, tanggal penolakan, dan alasan penolakan
+7. THE Platform SHALL memproses pengiriman email secara asynchronous menggunakan Laravel queue untuk mencegah blocking pada response HTTP
+8. IF pengiriman email gagal, THEN THE Platform SHALL mencatat detail kegagalan ke Laravel log tanpa membatalkan proses approve/reject yang sudah berhasil
 
-### Requirement 9: Database Schema Requirements
+---
 
-**User Story:** As a backend developer, I want to ensure the mosques table has all required columns for approval/rejection, so that the feature can store all necessary data.
+### Requirement 5: Validasi Form Request
 
-#### Acceptance Criteria
-
-1. THE mosques table SHALL have an approved_at column of type timestamp nullable
-2. THE mosques table SHALL have an approved_by column of type unsignedBigInteger nullable with foreign key to users.id
-3. THE mosques table SHALL have a rejected_at column of type timestamp nullable
-4. THE mosques table SHALL have a rejected_by column of type unsignedBigInteger nullable with foreign key to users.id
-5. THE mosques table SHALL have a rejection_reason column of type text nullable
-6. THE mosques table SHALL have an invitation_code column of type string(6) nullable unique
-
-### Requirement 10: Security and Authorization
-
-**User Story:** As a platform owner, I want approval/rejection actions to be secure, so that only authorized super-admins can perform these actions.
+**User Story:** Sebagai backend developer, saya ingin menggunakan Form Request yang terdedikasi untuk validasi, sehingga logika validasi approve dan reject terpisah dari controller dan dapat diuji secara independen.
 
 #### Acceptance Criteria
 
-1. THE Platform SHALL verify that the authenticated user has the 'super-admin' role before allowing approve/reject actions
-2. THE Platform SHALL use CSRF token protection for all POST requests to approve and reject routes
-3. THE Platform SHALL log all approval and rejection actions with user ID and timestamp for audit purposes
-4. THE Platform SHALL prevent concurrent approval/rejection of the same mosque using database transactions
+1. THE ApproveMosqueRequest SHALL mendefinisikan rule validasi: `mosque_id` wajib ada (required), bertipe integer, dan nilainya ada di tabel `mosques`
+2. THE ApproveMosqueRequest SHALL memverifikasi bahwa masjid yang diminta memiliki status `pending` melalui custom validation rule
+3. THE RejectMosqueRequest SHALL mendefinisikan rule validasi: `mosque_id` wajib ada (required), bertipe integer, dan nilainya ada di tabel `mosques`
+4. THE RejectMosqueRequest SHALL mendefinisikan rule validasi: `rejection_reason` wajib ada (required), bertipe string, dan memiliki panjang minimal 10 karakter
+5. THE RejectMosqueRequest SHALL memverifikasi bahwa masjid yang diminta memiliki status `pending` melalui custom validation rule
+6. WHEN validasi gagal, THE Platform SHALL mengembalikan response HTTP 422 dengan pesan error validasi yang deskriptif dalam bahasa Indonesia
+
+---
+
+### Requirement 6: Routing dan Otorisasi
+
+**User Story:** Sebagai backend developer, saya ingin mendaftarkan route approve dan reject yang terproteksi, sehingga hanya owner yang terautentikasi yang bisa mengakses endpoint tersebut.
+
+#### Acceptance Criteria
+
+1. THE Platform SHALL mendaftarkan route POST `/owner/mosques/{mosque}/approve` yang dipetakan ke `Mosque_Controller@approve` dengan nama route `owner.mosques.approve`
+2. THE Platform SHALL mendaftarkan route POST `/owner/mosques/{mosque}/reject` yang dipetakan ke `Mosque_Controller@reject` dengan nama route `owner.mosques.reject`
+3. THE routes tersebut SHALL dilindungi oleh middleware `auth` dan middleware khusus verifikasi role `owner`/`super-admin`
+4. THE Platform SHALL menggunakan CSRF token protection pada semua POST request ke route approve dan reject
+5. WHEN pengguna yang tidak terautentikasi mengakses route tersebut, THE Platform SHALL mengarahkan ke halaman login
+6. WHEN pengguna yang terautentikasi namun bukan owner mengakses route tersebut, THE Platform SHALL mengembalikan response HTTP 403
+
+---
+
+### Requirement 7: Integritas Data dan Keamanan
+
+**User Story:** Sebagai platform owner, saya ingin aksi approve/reject dijalankan secara aman dan konsisten, sehingga data masjid tidak korup akibat kondisi race condition atau akses tidak sah.
+
+#### Acceptance Criteria
+
+1. THE Mosque_Service SHALL mengeksekusi operasi update status, generate invitation_code, dan set timestamp di dalam satu database transaction
+2. IF terjadi error selama database transaction, THEN THE Mosque_Service SHALL melakukan rollback seluruh perubahan sehingga tidak ada data yang tersimpan sebagian
+3. THE Platform SHALL memverifikasi bahwa pengguna yang terautentikasi memiliki role `super-admin` sebelum mengizinkan aksi approve atau reject
+4. THE Platform SHALL mencatat setiap aksi approve dan reject ke Laravel log dengan informasi: user ID, mosque ID, aksi yang dilakukan, dan timestamp
 
