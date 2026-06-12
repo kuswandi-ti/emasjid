@@ -1,7 +1,6 @@
-                                          
-weMJ./Buatkan git commi
-B 
- aSaGHEL;I]OI'I/,
+# ===== Laravel (web/) =====
+web/*.log
+web/.DS_Store
 web/.env
 web/.env.backup
 web/.env.production
