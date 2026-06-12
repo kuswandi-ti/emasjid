@@ -1,4 +1,4 @@
-@extends('layouts.owner')
+@extends('owner.layouts.app')
 
 @section('title', 'Pengaturan Fee Platform')
 
