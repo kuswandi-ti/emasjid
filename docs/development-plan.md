@@ -229,9 +229,6 @@
 
 **Deliverable:** Owner bisa mengatur fee platform.
 
-**Status:** COMPLETED (8 Juni 2026) | Files: 11 created, 1 modified | Tests: 8 passing  
-**Documentation:** See docs/DAY-9-COMPLETE.md for full details.
-
 ---
 
 ### Day 10 — Owner: Manage Owner Accounts & Reports
