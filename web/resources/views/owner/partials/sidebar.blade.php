@@ -23,7 +23,7 @@
             @endif
         </a>
 
-        <a href="#"
+        <a href="{{ route('owner.settings.index') }}"
            class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 {{ request()->routeIs('owner.settings*') ? 'active bg-primary' : '' }}">
             <i class="bi bi-gear me-2"></i> Settings
         </a>

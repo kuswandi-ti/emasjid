@@ -22,16 +22,22 @@ class PlatformSettingRepository implements PlatformSettingRepositoryInterface
 
     public function get(string $key): ?PlatformSetting
     {
-        return Cache::remember(self::CACHE_KEY . "_{$key}", self::CACHE_TTL, function () use ($key) {
-            return PlatformSetting::where('key', $key)->first();
-        });
+        // Do not cache the Eloquent object — database cache driver serializes it,
+        // causing __PHP_Incomplete_Class on deserialization before autoload runs.
+        return PlatformSetting::where('key', $key)->first();
     }
 
     public function getValue(string $key, mixed $default = null): mixed
     {
-        $setting = $this->get($key);
+        $cacheKey = self::CACHE_KEY . "_value_{$key}";
 
-        return $setting ? $setting->value : $default;
+        $value = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($key, $default) {
+            $setting = PlatformSetting::where('key', $key)->first();
+            // Store a sentinel so we can distinguish "not found" from null
+            return $setting ? $setting->value : '__NOT_FOUND__';
+        });
+
+        return $value === '__NOT_FOUND__' ? $default : $value;
     }
 
     public function set(string $key, mixed $value, ?string $description = null): PlatformSetting
@@ -109,6 +115,7 @@ class PlatformSettingRepository implements PlatformSettingRepositoryInterface
     {
         if ($key) {
             Cache::forget(self::CACHE_KEY . "_{$key}");
+            Cache::forget(self::CACHE_KEY . "_value_{$key}");
         }
 
         Cache::forget(self::CACHE_KEY . '_all');
