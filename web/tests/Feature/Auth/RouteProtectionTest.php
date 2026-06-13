@@ -98,11 +98,11 @@ class RouteProtectionTest extends TestCase
     }
 
     /**
-     * A mosque-admin whose mosque is suspended is forbidden on /admin/dashboard.
+     * A mosque-admin whose mosque is suspended is redirected to the suspended page on /admin/dashboard.
      *
-     * EnsureMosqueActive aborts with 403 when mosque status is not Active.
+     * EnsureMosqueActive redirects to mosque.suspended route when mosque status is Suspended.
      *
-     * Validates: Requirements 7.5, 9.9
+     * Validates: Requirements 5.2, 7.5, 9.9
      */
     public function test_mosque_admin_with_suspended_mosque_is_forbidden_on_admin(): void
     {
@@ -116,7 +116,9 @@ class RouteProtectionTest extends TestCase
 
         $response = $this->actingAs($user)->get('/admin/dashboard');
 
-        $response->assertForbidden();
+        // EnsureMosqueActive now redirects suspended mosques to mosque.suspended route
+        // instead of aborting with 403, per Day 11 requirement 5.2
+        $response->assertRedirect(route('mosque.suspended'));
     }
 
     /**

@@ -27,6 +27,8 @@ Route::prefix('owner')->name('owner.')->middleware(['auth:web', 'owner'])->group
     Route::get('/mosques/{id}', [MosqueController::class, 'show'])->name('mosques.show');
     Route::post('/mosques/{id}/approve', [MosqueController::class, 'approve'])->name('mosques.approve');
     Route::post('/mosques/{id}/reject', [MosqueController::class, 'reject'])->name('mosques.reject');
+    Route::post('/mosques/{id}/suspend', [MosqueController::class, 'suspend'])->name('mosques.suspend');
+    Route::post('/mosques/{id}/reactivate', [MosqueController::class, 'reactivate'])->name('mosques.reactivate');
 
     // Settings
     Route::get('/settings', [\App\Http\Controllers\Owner\SettingController::class, 'index'])->name('settings.index');
@@ -39,6 +41,13 @@ Route::prefix('owner')->name('owner.')->middleware(['auth:web', 'owner'])->group
     Route::get('/reports/fee', [ReportController::class, 'feeIndex'])->name('reports.fee.index');
     Route::get('/reports/fee/export', [ReportController::class, 'feeExport'])->name('reports.fee.export');
 });
+
+// ─── Mosque status pages (no auth/mosque.active middleware — avoid redirect loops) ───
+Route::get('/mosque/suspended', function () {
+    return view('mosque.suspended', [
+        'mosqueName' => session('mosque_name'),
+    ]);
+})->name('mosque.suspended');
 
 // ─── Admin panel ──────────────────────────────────────────────────────────────
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'mosque', 'mosque.active'])->group(function () {

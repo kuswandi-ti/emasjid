@@ -47,6 +47,11 @@ class EnsureMosqueActive
                 ], 403);
             }
 
+            if ($mosque->status === MosqueStatus::Suspended) {
+                return redirect()->route('mosque.suspended')
+                    ->with('mosque_name', $mosque->name);
+            }
+
             abort(403, $message);
         }
 

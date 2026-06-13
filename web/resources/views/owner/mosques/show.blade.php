@@ -34,30 +34,67 @@
     </div>
 </div>
 
-{{-- Tasks 10.2–10.5: Pending Verification card (only shown when status is PENDING) --}}
-@if($mosque->status === \App\Enums\MosqueStatus::Pending)
-    <div class="card mb-4 border-warning shadow-sm">
-        <div class="card-body">
-            <h5 class="card-title text-warning">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>Pending Verification
-                <span class="badge bg-warning text-dark ms-2">Pending</span>
-            </h5>
+{{-- Compute badge color early so it can be used by the action card --}}
+@php
+    $statusColors = [
+        'active'    => 'success',
+        'pending'   => 'warning',
+        'suspended' => 'warning',
+        'rejected'  => 'danger',
+    ];
+    $statusValue = $mosque->status instanceof \App\Enums\MosqueStatus
+        ? $mosque->status->value
+        : $mosque->status;
+    $statusLabel = $mosque->status instanceof \App\Enums\MosqueStatus
+        ? $mosque->status->labels()
+        : ucfirst($mosque->status);
+    $badgeColor = $statusColors[$statusValue] ?? 'secondary';
+@endphp
+
+{{-- Action Card: ditampilkan untuk semua status kecuali rejected --}}
+@if($mosque->status !== \App\Enums\MosqueStatus::Rejected)
+<div class="card mb-4 border-{{ $badgeColor }} shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title text-{{ $badgeColor }}">
+            <i class="bi bi-shield-check me-2"></i>Aksi Manajemen Masjid
+        </h5>
+
+        @if($mosque->status === \App\Enums\MosqueStatus::Pending)
             <p class="card-text text-muted">
-                This mosque is awaiting your approval. Please review the details below before taking action.
+                Masjid ini menunggu persetujuan Anda. Tinjau detail di bawah sebelum mengambil tindakan.
             </p>
-            {{-- Task 10.3: Approve button | Task 10.4: Reject button --}}
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-success" onclick="approveMosque({{ $mosque->id }})">
-                    <i class="bi bi-check-circle me-1"></i>Approve
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-success" id="btn-approve"
+                        onclick="approveMosque({{ $mosque->id }})">
+                    <i class="bi bi-check-circle me-1"></i>Setujui Pendaftaran
                 </button>
-                <button type="button" class="btn btn-danger" onclick="rejectMosque({{ $mosque->id }})">
-                    <i class="bi bi-x-circle me-1"></i>Reject
+                <button type="button" class="btn btn-danger" id="btn-reject"
+                        onclick="rejectMosque({{ $mosque->id }})">
+                    <i class="bi bi-x-circle me-1"></i>Tolak Pendaftaran
                 </button>
             </div>
-        </div>
+
+        @elseif($mosque->status === \App\Enums\MosqueStatus::Active)
+            <p class="card-text text-muted">
+                Masjid ini sedang aktif. Anda dapat menangguhkannya jika diperlukan.
+            </p>
+            <button type="button" class="btn btn-warning" id="btn-suspend"
+                    onclick="suspendMosque({{ $mosque->id }})">
+                <i class="bi bi-pause-circle me-1"></i>Tangguhkan
+            </button>
+
+        @elseif($mosque->status === \App\Enums\MosqueStatus::Suspended)
+            <p class="card-text text-muted">
+                Masjid ini sedang ditangguhkan. Aktifkan kembali setelah permasalahan diselesaikan.
+            </p>
+            <button type="button" class="btn btn-success" id="btn-reactivate"
+                    onclick="reactivateMosque({{ $mosque->id }})">
+                <i class="bi bi-play-circle me-1"></i>Aktifkan Kembali
+            </button>
+        @endif
     </div>
+</div>
 @endif
-{{-- /Tasks 10.2–10.5 --}}
 
 {{-- 14.2 Basic Information --}}
 <div class="row mb-4">
@@ -82,21 +119,6 @@
                 {{-- Status badge --}}
                 <div class="mb-3">
                     <span class="text-muted small d-block mb-1">Status</span>
-                    @php
-                        $statusColors = [
-                            'active'    => 'success',
-                            'pending'   => 'warning',
-                            'suspended' => 'danger',
-                            'rejected'  => 'secondary',
-                        ];
-                        $statusValue = $mosque->status instanceof \App\Enums\MosqueStatus
-                            ? $mosque->status->value
-                            : $mosque->status;
-                        $statusLabel = $mosque->status instanceof \App\Enums\MosqueStatus
-                            ? $mosque->status->labels()
-                            : ucfirst($mosque->status);
-                        $badgeColor  = $statusColors[$statusValue] ?? 'secondary';
-                    @endphp
                     <span class="badge bg-{{ $badgeColor }} fs-6">{{ $statusLabel }}</span>
                 </div>
 
@@ -376,6 +398,84 @@
 
                 form.appendChild(csrfToken);
                 form.appendChild(reasonInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    {{-- Task 9.3: suspendMosque function --}}
+    function suspendMosque(mosqueId) {
+        Swal.fire({
+            title: 'Tangguhkan Masjid?',
+            text: 'Tangguhkan masjid ini? Masjid tidak akan bisa diakses sampai diaktifkan kembali.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#fd7e14',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Tangguhkan',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const btn = document.getElementById('btn-suspend');
+                btn.textContent = 'Memproses...';
+                btn.disabled = true;
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/owner/mosques/${mosqueId}/suspend`;
+
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+
+                const mosqueInput = document.createElement('input');
+                mosqueInput.type = 'hidden';
+                mosqueInput.name = 'mosque_id';
+                mosqueInput.value = mosqueId;
+
+                form.appendChild(csrf);
+                form.appendChild(mosqueInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    {{-- Task 9.3: reactivateMosque function --}}
+    function reactivateMosque(mosqueId) {
+        Swal.fire({
+            title: 'Aktifkan Kembali Masjid?',
+            text: 'Aktifkan kembali masjid ini? Masjid akan langsung bisa diakses kembali.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Aktifkan',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const btn = document.getElementById('btn-reactivate');
+                btn.textContent = 'Memproses...';
+                btn.disabled = true;
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/owner/mosques/${mosqueId}/reactivate`;
+
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+
+                const mosqueInput = document.createElement('input');
+                mosqueInput.type = 'hidden';
+                mosqueInput.name = 'mosque_id';
+                mosqueInput.value = mosqueId;
+
+                form.appendChild(csrf);
+                form.appendChild(mosqueInput);
                 document.body.appendChild(form);
                 form.submit();
             }

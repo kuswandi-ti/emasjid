@@ -6,9 +6,13 @@ use App\Contracts\Repositories\FeeReportRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Enums\MosqueStatus;
 use App\Events\MosqueApproved;
+use App\Events\MosqueReactivated;
 use App\Events\MosqueRejected;
+use App\Events\MosqueSuspended;
 use App\Listeners\SendMosqueApprovedNotification;
+use App\Listeners\SendMosqueReactivatedNotification;
 use App\Listeners\SendMosqueRejectedNotification;
+use App\Listeners\SendMosqueSuspendedNotification;
 use App\Models\Mosque;
 use App\Repositories\FeeReportRepository;
 use App\Repositories\UserRepository;
@@ -36,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
         // Event listeners for mosque approval/rejection notifications
         Event::listen(MosqueApproved::class, SendMosqueApprovedNotification::class);
         Event::listen(MosqueRejected::class, SendMosqueRejectedNotification::class);
+
+        // Event listeners for mosque suspend/reactivate notifications
+        Event::listen(MosqueSuspended::class, SendMosqueSuspendedNotification::class);
+        Event::listen(MosqueReactivated::class, SendMosqueReactivatedNotification::class);
 
 
         // Super-admin bypasses all permission checks

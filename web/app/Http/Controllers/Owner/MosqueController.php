@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Owner;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Owner\ApproveMosqueRequest;
 use App\Http\Requests\Owner\RejectMosqueRequest;
+use App\Http\Requests\Owner\ReactivateMosqueRequest;
+use App\Http\Requests\Owner\SuspendMosqueRequest;
 use App\Services\MosqueService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -100,6 +102,50 @@ class MosqueController extends Controller
             return redirect()
                 ->back()
                 ->with('error', 'Gagal menolak masjid: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Suspend an active mosque.
+     *
+     * Requirements: 1.3, 1.5, 1.9
+     */
+    public function suspend(SuspendMosqueRequest $request, int $id): RedirectResponse
+    {
+        $userId = auth()->id();
+
+        try {
+            $this->mosqueService->suspend($id, $userId);
+
+            return redirect()
+                ->route('owner.mosques.show', $id)
+                ->with('success', 'Masjid berhasil ditangguhkan.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal menangguhkan masjid: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reactivate a suspended mosque.
+     *
+     * Requirements: 2.3, 2.4, 2.9
+     */
+    public function reactivate(ReactivateMosqueRequest $request, int $id): RedirectResponse
+    {
+        $userId = auth()->id();
+
+        try {
+            $this->mosqueService->reactivate($id, $userId);
+
+            return redirect()
+                ->route('owner.mosques.show', $id)
+                ->with('success', 'Masjid berhasil diaktifkan kembali.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal mengaktifkan kembali masjid: ' . $e->getMessage());
         }
     }
 }

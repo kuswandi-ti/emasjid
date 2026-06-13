@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Contracts\Repositories\MosqueRepositoryInterface;
 use App\Enums\MosqueStatus;
 use App\Events\MosqueApproved;
+use App\Events\MosqueReactivated;
 use App\Events\MosqueRejected;
+use App\Events\MosqueSuspended;
 use App\Models\Mosque;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -177,6 +179,98 @@ class MosqueService
                 'rejected_at' => $mosque->rejected_at,
                 'reason'      => $reason,
             ]);
+
+            Cache::forget('owner.dashboard.statistics');
+
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Suspend an active mosque: change its status to suspended and dispatch MosqueSuspended event.
+     * All database changes are wrapped in a transaction to ensure consistency.
+     *
+     * @param  int  $mosqueId  The ID of the mosque to suspend
+     * @param  int  $userId    The ID of the owner performing the suspension
+     * @return bool True on success
+     *
+     * @throws \Exception If mosque is not found, not in active status, or update fails
+     */
+    public function suspend(int $mosqueId, int $userId): bool
+    {
+        DB::beginTransaction();
+
+        try {
+            $mosque = $this->mosqueRepository->find($mosqueId);
+
+            if (! $mosque || $mosque->status !== MosqueStatus::Active) {
+                throw new \Exception('Invalid mosque or status is not active');
+            }
+
+            $updated = $this->mosqueRepository->update($mosqueId, [
+                'status' => MosqueStatus::Suspended,
+            ]);
+
+            if (! $updated) {
+                throw new \Exception('Failed to update mosque');
+            }
+
+            $mosque->refresh();
+
+            event(new MosqueSuspended($mosque, $userId, now()));
+
+            DB::commit();
+
+            Log::info("Mosque suspended: mosque_id={$mosque->id}, mosque_name={$mosque->name}, by_user_id={$userId}");
+
+            Cache::forget('owner.dashboard.statistics');
+
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Reactivate a suspended mosque: change its status back to active and dispatch MosqueReactivated event.
+     * All database changes are wrapped in a transaction to ensure consistency.
+     *
+     * @param  int  $mosqueId  The ID of the mosque to reactivate
+     * @param  int  $userId    The ID of the owner performing the reactivation
+     * @return bool True on success
+     *
+     * @throws \Exception If mosque is not found, not in suspended status, or update fails
+     */
+    public function reactivate(int $mosqueId, int $userId): bool
+    {
+        DB::beginTransaction();
+
+        try {
+            $mosque = $this->mosqueRepository->find($mosqueId);
+
+            if (! $mosque || $mosque->status !== MosqueStatus::Suspended) {
+                throw new \Exception('Invalid mosque or status is not suspended');
+            }
+
+            $updated = $this->mosqueRepository->update($mosqueId, [
+                'status' => MosqueStatus::Active,
+            ]);
+
+            if (! $updated) {
+                throw new \Exception('Failed to update mosque');
+            }
+
+            $mosque->refresh();
+
+            event(new MosqueReactivated($mosque, $userId, now()));
+
+            DB::commit();
+
+            Log::info("Mosque reactivated: mosque_id={$mosque->id}, mosque_name={$mosque->name}, by_user_id={$userId}");
 
             Cache::forget('owner.dashboard.statistics');
 

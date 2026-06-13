@@ -94,7 +94,7 @@
                                     $statusMap = [
                                         'active'    => ['class' => 'success',   'label' => 'Active'],
                                         'pending'   => ['class' => 'warning',   'label' => 'Pending'],
-                                        'suspended' => ['class' => 'danger',    'label' => 'Suspended'],
+                                        'suspended' => ['class' => 'warning',   'label' => 'Suspended'],
                                         'rejected'  => ['class' => 'secondary', 'label' => 'Rejected'],
                                     ];
                                     $statusValue = $mosque->status instanceof \BackedEnum
